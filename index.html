@@ -923,51 +923,114 @@
       </div>
     </main>
     <script src="./assets/js/script.js" defer></script>
-    <!-- Fallback инициализация для file:// протокола -->
+    <!-- Универсальный fallback для инициализации навигации -->
     <script>
-      // Дополнительная проверка для file:// протокола
-      if (window.location.protocol === 'file:') {
-        window.addEventListener('load', function() {
-          console.log('File protocol detected, ensuring navigation is initialized');
-          setTimeout(function() {
-            if (window.switchPage && typeof window.switchPage === 'function') {
-              console.log('switchPage is available');
-              // Проверяем наличие элементов
-              const links = document.querySelectorAll('[data-nav-link]');
-              const pages = document.querySelectorAll('[data-page]');
-              console.log('Found', links.length, 'nav links and', pages.length, 'pages');
-              
-              // Если обработчики не добавлены, добавляем их вручную
-              if (links.length > 0) {
-                links.forEach(function(link) {
-                  if (!link.getAttribute('data-handler-attached')) {
-                    console.log('Adding handler to:', link.textContent.trim());
-                    link.addEventListener('click', function(e) {
-                      e.preventDefault();
-                      const text = this.textContent.trim();
-                      const mapping = {
-                        "Главная": "главная",
-                        "Кейсы": "кейсы",
-                        "Тарифы": "тарифы",
-                        "Заказать": "заказать & обсудить задачу",
-                        "Связаться": "связаться",
-                        "Обсудить задачу": "заказать & обсудить задачу"
-                      };
-                      const target = mapping[text] || text.toLowerCase();
-                      if (window.switchPage) {
-                        window.switchPage(target);
-                      }
-                    });
-                    link.setAttribute('data-handler-attached', 'true');
-                  }
-                });
-              }
+      // Универсальная инициализация навигации (работает на всех протоколах)
+      (function() {
+        const pageMapping = {
+          "Главная": "главная",
+          "Кейсы": "кейсы",
+          "Тарифы": "тарифы",
+          "Заказать": "заказать & обсудить задачу",
+          "Связаться": "связаться",
+          "Обсудить задачу": "заказать & обсудить задачу"
+        };
+        
+        function ensureNavigationInitialized() {
+          const links = document.querySelectorAll('[data-nav-link]');
+          const pages = document.querySelectorAll('[data-page]');
+          
+          if (links.length === 0 || pages.length === 0) {
+            console.warn('Navigation elements not found yet, retrying...');
+            return false;
+          }
+          
+          // Проверяем, есть ли обработчики
+          let handlersAttached = 0;
+          links.forEach(function(link) {
+            if (link.getAttribute('data-handler-attached') === 'true') {
+              handlersAttached++;
             } else {
-              console.error('switchPage function not available');
+              // Добавляем обработчик если его нет
+              const text = link.textContent.trim();
+              console.log('Adding fallback handler to:', text);
+              
+              const clickHandler = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const linkText = this.textContent.trim();
+                const target = pageMapping[linkText] || linkText.toLowerCase();
+                
+                console.log('Fallback handler clicked:', linkText, '->', target);
+                
+                if (window.switchPage && typeof window.switchPage === 'function') {
+                  window.switchPage(target);
+                } else {
+                  console.error('switchPage not available, trying direct navigation');
+                  // Прямая навигация если switchPage недоступна
+                  const targetPage = document.querySelector('[data-page="' + target + '"]');
+                  if (targetPage) {
+                    document.querySelectorAll('[data-page]').forEach(function(page) {
+                      page.classList.remove('active');
+                      page.style.display = 'none';
+                    });
+                    targetPage.classList.add('active');
+                    targetPage.style.display = 'block';
+                    targetPage.style.visibility = 'visible';
+                    targetPage.style.opacity = '1';
+                    
+                    // Обновляем активную кнопку
+                    links.forEach(function(l) {
+                      l.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }
+              };
+              
+              link.addEventListener('click', clickHandler);
+              link.setAttribute('data-handler-attached', 'true');
+              handlersAttached++;
             }
-          }, 500);
+          });
+          
+          console.log('Navigation handlers:', handlersAttached, 'of', links.length);
+          return handlersAttached === links.length;
+        }
+        
+        // Пытаемся инициализировать несколько раз
+        function initWithRetry(attempts) {
+          attempts = attempts || 0;
+          if (attempts > 10) {
+            console.error('Failed to initialize navigation after 10 attempts');
+            return;
+          }
+          
+          if (!ensureNavigationInitialized()) {
+            setTimeout(function() {
+              initWithRetry(attempts + 1);
+            }, 200);
+          } else {
+            console.log('Navigation fully initialized');
+          }
+        }
+        
+        // Запускаем инициализацию
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initWithRetry, 100);
+          });
+        } else {
+          setTimeout(initWithRetry, 100);
+        }
+        
+        // Дополнительная проверка при полной загрузке
+        window.addEventListener('load', function() {
+          setTimeout(initWithRetry, 300);
         });
-      }
+      })();
     </script>
     <script
       type="module"

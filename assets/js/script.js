@@ -119,8 +119,11 @@
   }
   const pageMapping = {
     "главная": "главная",
+    "Главная": "главная",
     "кейсы": "кейсы",
+    "Кейсы": "кейсы",
     "тарифы": "тарифы",
+    "Тарифы": "тарифы",
     "заказать": "заказать & обсудить задачу",
     "Заказать": "заказать & обсудить задачу",
     "заказать & обсудить задачу": "заказать & обсудить задачу",
@@ -284,10 +287,15 @@
       let attempts = (window._navInitAttempts || 0) + 1;
       window._navInitAttempts = attempts;
       
-      if (attempts < 10) {
+      if (attempts < 15) {
         setTimeout(initializeApp, 300);
       } else {
         console.error('Failed to initialize navigation after', attempts, 'attempts');
+        // Последняя попытка с прямым доступом
+        if (navLinks.length > 0 || pages.length > 0) {
+          console.log('Attempting direct initialization with available elements');
+          initNavigation();
+        }
       }
       return;
     }
@@ -339,19 +347,48 @@
     }
   });
   
-  // Финальная попытка через 1 секунду
+  // Финальная попытка через 1 секунду и еще через 2 секунды
   setTimeout(function() {
     const navLinks = document.querySelectorAll("[data-nav-link]");
     const pages = document.querySelectorAll("[data-page]");
     if (navLinks.length > 0 && pages.length > 0) {
       // Проверяем, инициализирована ли навигация
       let hasActivePage = document.querySelector("article.active");
-      if (!hasActivePage || navLinks.length > 0 && !navLinks[0].getAttribute('data-handler-attached')) {
-        console.log('Final initialization attempt...');
+      let handlersCount = 0;
+      navLinks.forEach(function(link) {
+        if (link.getAttribute('data-handler-attached') === 'true') {
+          handlersCount++;
+        }
+      });
+      
+      if (!hasActivePage || handlersCount < navLinks.length) {
+        console.log('Final initialization attempt...', {
+          hasActivePage: !!hasActivePage,
+          handlersCount: handlersCount,
+          totalLinks: navLinks.length
+        });
         initializeApp();
       }
     }
   }, 1000);
+  
+  // Еще одна попытка через 2 секунды для надежности
+  setTimeout(function() {
+    const navLinks = document.querySelectorAll("[data-nav-link]");
+    if (navLinks.length > 0) {
+      let handlersCount = 0;
+      navLinks.forEach(function(link) {
+        if (link.getAttribute('data-handler-attached') === 'true') {
+          handlersCount++;
+        }
+      });
+      
+      if (handlersCount < navLinks.length) {
+        console.log('Second final attempt, initializing navigation...');
+        initNavigation();
+      }
+    }
+  }, 2000);
   const orderForm = document.querySelector("[data-order-form]");
   const orderInputs = document.querySelectorAll("[data-order-input]");
   const orderBtn = document.querySelector("[data-order-btn]");
