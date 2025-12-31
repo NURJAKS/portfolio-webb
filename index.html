@@ -923,6 +923,52 @@
       </div>
     </main>
     <script src="./assets/js/script.js" defer></script>
+    <!-- Fallback инициализация для file:// протокола -->
+    <script>
+      // Дополнительная проверка для file:// протокола
+      if (window.location.protocol === 'file:') {
+        window.addEventListener('load', function() {
+          console.log('File protocol detected, ensuring navigation is initialized');
+          setTimeout(function() {
+            if (window.switchPage && typeof window.switchPage === 'function') {
+              console.log('switchPage is available');
+              // Проверяем наличие элементов
+              const links = document.querySelectorAll('[data-nav-link]');
+              const pages = document.querySelectorAll('[data-page]');
+              console.log('Found', links.length, 'nav links and', pages.length, 'pages');
+              
+              // Если обработчики не добавлены, добавляем их вручную
+              if (links.length > 0) {
+                links.forEach(function(link) {
+                  if (!link.getAttribute('data-handler-attached')) {
+                    console.log('Adding handler to:', link.textContent.trim());
+                    link.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      const text = this.textContent.trim();
+                      const mapping = {
+                        "Главная": "главная",
+                        "Кейсы": "кейсы",
+                        "Тарифы": "тарифы",
+                        "Заказать": "заказать & обсудить задачу",
+                        "Связаться": "связаться",
+                        "Обсудить задачу": "заказать & обсудить задачу"
+                      };
+                      const target = mapping[text] || text.toLowerCase();
+                      if (window.switchPage) {
+                        window.switchPage(target);
+                      }
+                    });
+                    link.setAttribute('data-handler-attached', 'true');
+                  }
+                });
+              }
+            } else {
+              console.error('switchPage function not available');
+            }
+          }, 500);
+        });
+      }
+    </script>
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"

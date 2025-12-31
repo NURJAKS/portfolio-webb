@@ -117,8 +117,6 @@
       });
     }
   }
-  const navigationLinks = document.querySelectorAll("[data-nav-link]");
-  const pages = document.querySelectorAll("[data-page]");
   const pageMapping = {
     "главная": "главная",
     "кейсы": "кейсы",
@@ -132,48 +130,89 @@
   };
 
   function switchPage(targetPageName) {
-    if (!targetPageName) return;
+    if (!targetPageName) {
+      console.error('switchPage called without targetPageName');
+      return;
+    }
     console.log('Switching to page:', targetPageName);
-    for (let j = 0; j < pages.length; j++) {
-      pages[j].classList.remove("active");
-      pages[j].style.display = 'none';
+    
+    // Получить свежие ссылки на элементы
+    const allPages = document.querySelectorAll("[data-page]");
+    const allNavLinks = document.querySelectorAll("[data-nav-link]");
+    
+    // Скрыть все страницы
+    for (let j = 0; j < allPages.length; j++) {
+      allPages[j].classList.remove("active");
+      allPages[j].style.display = 'none';
+      allPages[j].style.visibility = 'hidden';
+      allPages[j].style.opacity = '0';
     }
-    for (let j = 0; j < navigationLinks.length; j++) {
-      navigationLinks[j].classList.remove("active");
+    
+    // Убрать активный класс со всех ссылок
+    for (let j = 0; j < allNavLinks.length; j++) {
+      allNavLinks[j].classList.remove("active");
     }
+    
+    // Найти и активировать нужную страницу
     let pageFound = false;
-    for (let j = 0; j < pages.length; j++) {
-      const pageName = pages[j].dataset.page;
+    for (let j = 0; j < allPages.length; j++) {
+      const pageName = allPages[j].dataset.page;
       if (pageName === targetPageName) {
-        pages[j].classList.add("active");
-        pages[j].style.display = 'block';
-        pages[j].style.visibility = 'visible';
-        pages[j].style.opacity = '1';
+        allPages[j].classList.add("active");
+        allPages[j].style.display = 'block';
+        allPages[j].style.visibility = 'visible';
+        allPages[j].style.opacity = '1';
+        allPages[j].style.position = 'relative';
+        allPages[j].style.zIndex = '1';
         pageFound = true;
-        console.log('Page activated:', pageName, pages[j]);
+        console.log('Page activated:', pageName, allPages[j]);
         break;
       }
     }
+    
     if (!pageFound) {
       console.error('Page not found:', targetPageName);
+      console.log('Available pages:', Array.from(allPages).map(p => p.dataset.page));
+      return;
     }
-    for (let j = 0; j < navigationLinks.length; j++) {
-      const linkText = navigationLinks[j].textContent.trim();
+    
+    // Активировать соответствующую навигационную ссылку
+    for (let j = 0; j < allNavLinks.length; j++) {
+      const linkText = allNavLinks[j].textContent.trim();
       const mappedPage = pageMapping[linkText];
-      if (mappedPage === targetPageName) {
-        navigationLinks[j].classList.add("active");
+      if (mappedPage === targetPageName || linkText.toLowerCase() === targetPageName.toLowerCase()) {
+        allNavLinks[j].classList.add("active");
+        console.log('Link activated:', linkText);
         break;
       }
     }
-    window.scrollTo(0, 0);
+    
+    // Прокрутить вверх
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   }
+  // Делаем функцию доступной глобально
   window.switchPage = switchPage;
-  if (navigationLinks.length > 0 && pages.length > 0) {
-    console.log('Navigation initialized:', navigationLinks.length, 'links,', pages.length, 'pages');
+  console.log('switchPage function registered globally');
+  
+  // Функция инициализации навигации
+  function initNavigation() {
+    const navLinks = document.querySelectorAll("[data-nav-link]");
+    const pageElements = document.querySelectorAll("[data-page]");
+    
+    if (navLinks.length === 0 || pageElements.length === 0) {
+      console.error('Navigation elements not found! Links:', navLinks.length, 'Pages:', pageElements.length);
+      return;
+    }
+    
+    console.log('Navigation initialized:', navLinks.length, 'links,', pageElements.length, 'pages');
+    
+    // Инициализация активной страницы
     const activePage = document.querySelector("article.active");
-    console.log('Active page on load:', activePage);
     if (activePage) {
-      console.log('Forcing display of active page');
+      console.log('Active page on load:', activePage);
       activePage.style.setProperty('display', 'block', 'important');
       activePage.style.setProperty('visibility', 'visible', 'important');
       activePage.style.setProperty('opacity', '1', 'important');
@@ -181,29 +220,138 @@
       activePage.style.setProperty('z-index', '1', 'important');
       activePage.style.setProperty('min-height', '200px', 'important');
       activePage.classList.add('active');
-      const computedStyle = window.getComputedStyle(activePage);
-      console.log('Computed display:', computedStyle.display);
-      console.log('Computed visibility:', computedStyle.visibility);
-      console.log('Computed opacity:', computedStyle.opacity);
-      console.log('Article offsetHeight:', activePage.offsetHeight);
     } else {
-      console.log('No active page found,switching to главная');
+      console.log('No active page found, switching to главная');
       switchPage("главная");
     }
-    for (let i = 0; i < navigationLinks.length; i++) {
-      navigationLinks[i].addEventListener("click", function(e) {
+    
+    // Добавление обработчиков событий для навигационных ссылок
+    navLinks.forEach(function(link) {
+      // Удаляем старый обработчик если есть
+      const oldHandler = link._navClickHandler;
+      if (oldHandler) {
+        link.removeEventListener("click", oldHandler);
+      }
+      
+      // Создаем новый обработчик
+      const clickHandler = function(e) {
         e.preventDefault();
         e.stopPropagation();
         const linkText = this.textContent.trim();
-        console.log('Navigation clicked:', linkText);
-        const targetPage = pageMapping[linkText] || linkText.toLowerCase();
+        console.log('Navigation clicked:', linkText, this);
+        
+        // Получить target page из маппинга
+        let targetPage = pageMapping[linkText];
+        if (!targetPage) {
+          // Если нет в маппинге, попробуем найти по тексту
+          targetPage = linkText.toLowerCase();
+        }
+        
         console.log('Target page:', targetPage);
-        switchPage(targetPage);
-      });
-    }
-  } else {
-    console.error('Navigation elements not found! Links:', navigationLinks.length, 'Pages:', pages.length);
+        if (targetPage && window.switchPage) {
+          window.switchPage(targetPage);
+        } else {
+          console.error('Could not determine target page for:', linkText, 'or switchPage not available');
+        }
+      };
+      
+      // Сохраняем ссылку на обработчик
+      link._navClickHandler = clickHandler;
+      link.setAttribute('data-handler-attached', 'true');
+      
+      // Добавляем обработчик
+      link.addEventListener("click", clickHandler);
+      
+      console.log('Handler attached to:', linkText);
+    });
+    
+    console.log('Navigation handlers attached to', navLinks.length, 'links');
   }
+  
+  // Инициализация после загрузки DOM
+  function initializeApp() {
+    // Проверяем наличие необходимых элементов
+    const navLinks = document.querySelectorAll("[data-nav-link]");
+    const pages = document.querySelectorAll("[data-page]");
+    
+    if (navLinks.length === 0 || pages.length === 0) {
+      console.warn('Navigation elements not ready yet, retrying...', {
+        navLinks: navLinks.length,
+        pages: pages.length,
+        readyState: document.readyState
+      });
+      // Увеличиваем таймаут и количество попыток
+      let attempts = (window._navInitAttempts || 0) + 1;
+      window._navInitAttempts = attempts;
+      
+      if (attempts < 10) {
+        setTimeout(initializeApp, 300);
+      } else {
+        console.error('Failed to initialize navigation after', attempts, 'attempts');
+      }
+      return;
+    }
+    
+    console.log('Initializing navigation with', navLinks.length, 'links and', pages.length, 'pages');
+    // Инициализируем навигацию
+    initNavigation();
+  }
+  
+  // Множественная инициализация для надежности
+  function startInitialization() {
+    initializeApp();
+  }
+  
+  // Запускаем инициализацию в зависимости от состояния документа
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startInitialization);
+  } else {
+    // DOM уже загружен
+    startInitialization();
+  }
+  
+  // Дополнительная проверка при полной загрузке страницы
+  window.addEventListener('load', function() {
+    console.log('Window loaded, checking navigation...');
+    const activePage = document.querySelector("article.active");
+    if (activePage) {
+      activePage.style.setProperty('display', 'block', 'important');
+      activePage.style.setProperty('visibility', 'visible', 'important');
+      activePage.style.setProperty('opacity', '1', 'important');
+    }
+    
+    // Повторная инициализация на случай если первая не сработала
+    const navLinks = document.querySelectorAll("[data-nav-link]");
+    if (navLinks.length > 0) {
+      // Проверяем, есть ли обработчики
+      let hasHandlers = false;
+      navLinks.forEach(function(link) {
+        // Проверяем наличие обработчиков через внутренние свойства
+        if (link.onclick || link.getAttribute('data-handler-attached')) {
+          hasHandlers = true;
+        }
+      });
+      
+      if (!hasHandlers) {
+        console.log('No handlers found, reinitializing navigation...');
+        initializeApp();
+      }
+    }
+  });
+  
+  // Финальная попытка через 1 секунду
+  setTimeout(function() {
+    const navLinks = document.querySelectorAll("[data-nav-link]");
+    const pages = document.querySelectorAll("[data-page]");
+    if (navLinks.length > 0 && pages.length > 0) {
+      // Проверяем, инициализирована ли навигация
+      let hasActivePage = document.querySelector("article.active");
+      if (!hasActivePage || navLinks.length > 0 && !navLinks[0].getAttribute('data-handler-attached')) {
+        console.log('Final initialization attempt...');
+        initializeApp();
+      }
+    }
+  }, 1000);
   const orderForm = document.querySelector("[data-order-form]");
   const orderInputs = document.querySelectorAll("[data-order-input]");
   const orderBtn = document.querySelector("[data-order-btn]");
