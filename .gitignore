@@ -72,3 +72,15 @@ coverage/
 .temp/
 tmp/
 temp/
+
+# Browser logs and snapshots
+browser-logs/
+*.log
+
+# Local development
+.vscode/
+*.code-workspace
+
+# Backup files
+*.orig
+*.rej

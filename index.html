@@ -56,6 +56,55 @@
     />
   </head>
   <body>
+    <!-- Mobile Menu Button (Hamburger) -->
+    <button class="mobile-menu-btn" aria-label="Открыть меню" data-mobile-menu-btn>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" data-mobile-menu-overlay></div>
+
+    <!-- Mobile Sidebar Menu -->
+    <nav class="mobile-menu" data-mobile-menu>
+      <div class="mobile-menu-header">
+        <a href="./" class="mobile-menu-logo">
+          <img
+            src="./assets/images/image-removebg-preview.png"
+            alt="TechFlow Logo"
+            class="mobile-logo-img"
+          />
+        </a>
+        <button class="mobile-menu-close" aria-label="Закрыть меню" data-mobile-menu-close>
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <ul class="mobile-menu-list">
+        <li class="mobile-menu-item">
+          <button class="mobile-menu-link active" data-nav-link data-mobile-menu-link>
+            Главная
+          </button>
+        </li>
+        <li class="mobile-menu-item">
+          <button class="mobile-menu-link" data-nav-link data-mobile-menu-link>Кейсы</button>
+        </li>
+        <li class="mobile-menu-item">
+          <button class="mobile-menu-link" data-nav-link data-mobile-menu-link>Тарифы</button>
+        </li>
+        <li class="mobile-menu-item">
+          <button class="mobile-menu-link mobile-menu-link-cta" data-nav-link data-mobile-menu-link>
+            Заказать
+          </button>
+        </li>
+        <li class="mobile-menu-item">
+          <button class="mobile-menu-link mobile-menu-link-cta" data-nav-link data-mobile-menu-link>
+            Связаться
+          </button>
+        </li>
+      </ul>
+    </nav>
+
     <main>
       <div class="main-content">
         <nav class="navbar">

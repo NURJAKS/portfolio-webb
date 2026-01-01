@@ -2,7 +2,7 @@
 (function() {
   const observerOptions = {
     threshold: 0.1,
-    rootMargin: '0px 0px-50px 0px'
+    rootMargin: '0px 0px -50px 0px'
   };
   const fadeInObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -265,7 +265,8 @@
       // Добавляем обработчик
       link.addEventListener("click", clickHandler);
       
-      console.log('Handler attached to:', linkText);
+      const linkTextForLog = link.textContent.trim();
+      console.log('Handler attached to:', linkTextForLog);
     });
     
     console.log('Navigation handlers attached to', navLinks.length, 'links');
@@ -419,6 +420,7 @@
       orderBtn.setAttribute("disabled", "");
       const message = `🎯*Новый заказ с сайта*\n\n` + `📋*Тип заказа:*${orderType}\n` + `💰*Тариф:*${tariff}\n` + `👤*Имя:*${fullname}\n` + `📱*Телефон:*${phone}\n\n` + `📝*Описание проекта:*\n${description}\n\n` + `⏰*Время заявки:*${new Date().toLocaleString('ru-RU')}`;
       const encodedMessage = encodeURIComponent(message);
+      // Номер WhatsApp: +7 700 217-47-01 (формат для WhatsApp: 77002174701)
       const whatsappNumber = "77002174701";
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
       setTimeout(() => {
@@ -511,3 +513,102 @@ function selectTariff(tariffId) {
   setTimeout(forceDisplayActiveArticle, 500);
   setTimeout(forceDisplayActiveArticle, 1000);
 }
+
+// Mobile Menu Functionality
+(function() {
+  const mobileMenuBtn = document.querySelector('[data-mobile-menu-btn]');
+  const mobileMenu = document.querySelector('[data-mobile-menu]');
+  const mobileMenuOverlay = document.querySelector('[data-mobile-menu-overlay]');
+  const mobileMenuClose = document.querySelector('[data-mobile-menu-close]');
+  const mobileMenuLinks = document.querySelectorAll('[data-mobile-menu-link]');
+  const body = document.body;
+
+  function openMobileMenu() {
+    mobileMenuBtn.classList.add('active');
+    mobileMenu.classList.add('active');
+    mobileMenuOverlay.classList.add('active');
+    body.classList.add('mobile-menu-open');
+  }
+
+  function closeMobileMenu() {
+    mobileMenuBtn.classList.remove('active');
+    mobileMenu.classList.remove('active');
+    mobileMenuOverlay.classList.remove('active');
+    body.classList.remove('mobile-menu-open');
+  }
+
+  // Open menu on hamburger click
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (mobileMenu.classList.contains('active')) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
+    });
+  }
+
+  // Close menu on overlay click
+  if (mobileMenuOverlay) {
+    mobileMenuOverlay.addEventListener('click', function() {
+      closeMobileMenu();
+    });
+  }
+
+  // Close menu on close button click
+  if (mobileMenuClose) {
+    mobileMenuClose.addEventListener('click', function() {
+      closeMobileMenu();
+    });
+  }
+
+  // Close menu when clicking on a menu link
+  mobileMenuLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      // Update active state
+      mobileMenuLinks.forEach(function(l) {
+        l.classList.remove('active');
+      });
+      this.classList.add('active');
+      
+      // Close menu after a short delay to allow navigation
+      setTimeout(function() {
+        closeMobileMenu();
+      }, 300);
+    });
+  });
+
+  // Close menu on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('active')) {
+      closeMobileMenu();
+    }
+  });
+
+  // Sync active state with main navigation
+  function syncActiveState() {
+    const mainNavLinks = document.querySelectorAll('.navbar-link');
+    mobileMenuLinks.forEach(function(mobileLink) {
+      const mobileText = mobileLink.textContent.trim();
+      mainNavLinks.forEach(function(mainLink) {
+        if (mainLink.textContent.trim() === mobileText) {
+          if (mainLink.classList.contains('active')) {
+            mobileLink.classList.add('active');
+          } else {
+            mobileLink.classList.remove('active');
+          }
+        }
+      });
+    });
+  }
+
+  // Watch for navigation changes
+  const navLinks = document.querySelectorAll('[data-nav-link]');
+  navLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+      setTimeout(syncActiveState, 100);
+    });
+  });
+})();
